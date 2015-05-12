@@ -22,7 +22,6 @@ package org.apache.wink.client.internal.handlers;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -35,11 +34,15 @@ import org.apache.wink.client.handlers.ClientHandler;
 import org.apache.wink.client.handlers.HandlerContext;
 import org.apache.wink.client.handlers.InputStreamAdapter;
 import org.apache.wink.client.handlers.OutputStreamAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Provides support for GZip encoding for requests and responses
  */
 public class GzipHandler implements ClientHandler {
+	
+    private static Logger logger = LoggerFactory.getLogger(GzipHandler.class);
 
     public ClientResponse handle(ClientRequest request, HandlerContext context) throws Exception {
         request.getHeaders().add("Accept-Encoding", "gzip"); //$NON-NLS-1$ //$NON-NLS-2$
@@ -65,13 +68,33 @@ public class GzipHandler implements ClientHandler {
             	String clHeader = response.getHeaders().getFirst("Content-Length");
             	if ( clHeader != null ) {
             		try {
-            			int length = Integer.parseInt(clHeader);
-                		byte[] data = new byte[length];
-                		is.read(data);
+                    	int length = Integer.parseInt(clHeader);
+
+                    	// Transfer bytes from in to out
+                    	byte[] data = new byte[length];
+                    	
+                    	int len;
+                    	int start = 0;
+                    	int end = length;
+                    	int check = 0;
+                    	while ((len = is.read(data, start, end)) > 0) {
+                    		end -= len;
+                    		if (len < length && end >= 0) {
+                    			start += len;
+                    		}
+                    		check = start + end;
+                    		if (check != length) {
+                    			logger.trace("check != length: check =" + check + " start=" + start + " end=" + end + " length=" +  length);
+                    		}
+                    	}
+                    	is.close();
+
                 		ByteArrayInputStream bis = new ByteArrayInputStream(data);
                 		return new GZIPInputStream(bis);
             		} catch ( NumberFormatException e) {
             			// ignore...
+            		} catch (Exception e) {
+            		  e.printStackTrace();
             		}
             	}
             	
