@@ -69,15 +69,14 @@ public class GzipHandler implements ClientHandler {
             	if ( clHeader != null ) {
             		try {
                     	int length = Integer.parseInt(clHeader);
-
                     	// Transfer bytes from in to out
                     	byte[] data = new byte[length];
-                    	
+                    	BufferedInputStream bi = new BufferedInputStream(is);
                     	int len;
                     	int start = 0;
                     	int end = length;
                     	int check = 0;
-                    	while ((len = is.read(data, start, end)) > 0) {
+                    	while ((len = bi.read(data, start, end)) >= 0) {
                     		end -= len;
                     		if (len < length && end >= 0) {
                     			start += len;
@@ -87,7 +86,7 @@ public class GzipHandler implements ClientHandler {
                     			logger.trace("check != length: check =" + check + " start=" + start + " end=" + end + " length=" +  length);
                     		}
                     	}
-                    	is.close();
+                    	bi.close();
 
                 		ByteArrayInputStream bis = new ByteArrayInputStream(data);
                 		return new GZIPInputStream(bis);
