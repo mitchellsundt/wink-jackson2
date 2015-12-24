@@ -76,7 +76,7 @@ public class GzipHandler implements ClientHandler {
                     	int start = 0;
                     	int end = length;
                     	int check = 0;
-                    	while ((len = bi.read(data, start, end)) >= 0) {
+                    	while ((end != 0) && ((len = bi.read(data, start, end)) >= 0)) {
                     		end -= len;
                     		if (len < length && end >= 0) {
                     			start += len;
